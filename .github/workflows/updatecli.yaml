@@ -3,9 +3,9 @@ name: updatecli
 
 on:
   workflow_dispatch:
-  schedule:
-    # Every monday
-    - cron: '* * * * 1'
+  # schedule:
+  #   # Every monday
+  #   - cron: '* * * * 1'
   push:
   pull_request:
 jobs:
