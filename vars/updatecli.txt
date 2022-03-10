@@ -26,7 +26,6 @@
     withCredentials([string(credentialsId: 'another-credential-id', variable: 'ANOTHER_CRED')]) {
       updatecli()
     }
-    </code></pre>
 
     </p>
 </p>
