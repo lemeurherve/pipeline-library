@@ -116,11 +116,6 @@ def call(Map params = [:]) {
                       String requestedProvider = env.ARTIFACT_CACHING_PROXY_PROVIDER
                       String mavenSettings = libraryResource 'artifact-caching-proxy/settings.xml'
                       String mavenSettingsSecurity = libraryResource 'artifact-caching-proxy/settings-security.xml'
-                      String settingsFolder
-                      String settingsSecurityFile
-                      final String randomPassword = RandomStringUtils.randomAlphanumeric(20)
-                      String masterPassword
-                      String serverPassword
 
                       // As azure VM agents don't have this env var, setting a default provider if none is specified or if the provider isn't available
                       if (requestedProvider == null || requestedProvider == '' || !availableProxyProviders.contains(requestedProvider)) {
@@ -130,31 +125,13 @@ def call(Map params = [:]) {
 
                       echo "Setting up Maven to use artifact caching proxy from '${requestedProvider}' provider..."
 
-                      // Generating settings-security.xml with a random master password (not reused)
-                      if (isUnix()) {
-                        settingsFolder = env.HOME + '/.m2'
-                        settingsFile = settingsFolder + '/settings.xml'
-                        settingsSecurityFile = settingsFolder + '/settings-security.xml'
-                        sh "mkdir -p ${settingsFolder}"
-                        masterPassword = sh(script: "set +x; mvn --quiet --encrypt-master-password ${randomPassword}", returnStdout: true)
+                      settingsFile = "${pwd tmp: true}/mavenSettings.xml"
+                      mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
+                      mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
+                      mavenSettings = mavenSettings.replace('SERVER-PASSWORD', env.ARTIFACT_CACHING_PROXY_PASSWORD)
+                      writeFile file: settingsFile, text: mavenSettings
 
-                        masterPassword = masterPassword.replaceAll('[\\n\\r]*', '')
-                        mavenSettingsSecurity = mavenSettingsSecurity.replace('ENCRYPTED-MASTER-PASSWORD', masterPassword)
-                        writeFile file: settingsSecurityFile, text: mavenSettingsSecurity
-
-                        // Generating settings.xml with proxy config and encrypted basic auth password
-                        serverPassword = sh(script: 'mvn --quiet --encrypt-password $ARTIFACT_CACHING_PROXY_PASSWORD', returnStdout: true)
-
-                        serverPassword = serverPassword.replaceAll('[\\n\\r]*', '')
-                        mavenSettings = mavenSettings.replace('PROVIDER', requestedProvider)
-                        mavenSettings = mavenSettings.replace('SERVER-USERNAME', env.ARTIFACT_CACHING_PROXY_USERNAME)
-                        mavenSettings = mavenSettings.replace('SERVER-PASSWORD', serverPassword)
-                        writeFile file: settingsFile, text: mavenSettings
-
-                        echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
-                      } else {
-                        echo 'NOTICE: no artifact caching proxy for Windows yet.'
-                      }
+                      echo "INFO: using artifact caching proxy from '${requestedProvider}' provider."
                     }
                   } else {
                     echo 'NOTICE: artifacts will be downloaded directly from https://repo.jenkins-ci.org.'
