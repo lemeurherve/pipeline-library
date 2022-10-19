@@ -105,7 +105,6 @@ def call(Map params = [:]) {
                     '-Dspotbugs.failOnError=false',
                     '-Dcheckstyle.failOnViolation=false',
                     '-Dcheckstyle.failsOnError=false',
-                    '-X',
                   ]
                   if (artifactCachingProxyEnabled) {
                     withCredentials([
