@@ -132,8 +132,11 @@ def call(Map params = [:]) {
                       final String configuredAvailableProxyProviders = env.ARTIFACT_CACHING_PROXY_AVAILABLE_PROVIDERS
                       if (configuredAvailableProxyProviders != null && configuredAvailableProxyProviders != '') {
                         final String availableProxyProviders = configuredAvailableProxyProviders.split(',')
-                        // Configure Maven settings if the requested provider is valid an available
-                        if (validProxyProviders.contains(requestedProxyProvider) && availableProxyProviders.contains(requestedProxyProvider)) {
+                        // Configure Maven settings if the requested provider is valid, available and respond to an health check
+                        if (validProxyProviders.contains(requestedProxyProvider)
+                            && availableProxyProviders.contains(requestedProxyProvider)
+                            && sh(script: "curl --fail https://repo.${requestedProxyProvider}.jenkins.io/healthz", returnStatus: true) == 0
+                            ) {
                           echo "INFO: using artifact caching proxy from '${requestedProxyProvider}' provider."
                           usingArtifactCachingProxy = true
                           configFileProvider(
