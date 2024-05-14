@@ -53,7 +53,9 @@ def call(userConfig = [:]) {
           agentTemplate(finalConfig.agentLabel, {
             withCredentials(finalConfig.stagingCredentials) {
               stage('🔎 Validate Terraform for Staging Environment') {
-                getInfraSharedTools(sharedToolsSubDir)
+                checkout scm
+
+                infra.getInfraSharedTools(sharedToolsSubDir)
 
                 sh makeCliCmd + ' validate'
               }
@@ -95,7 +97,9 @@ def call(userConfig = [:]) {
                 "TF_CLI_ARGS_plan=${tfCliArgsPlan}",
                 "PLAN_FILE_NAME=${planFileName}",
               ]) {
-                scmOutput = getInfraSharedTools(sharedToolsSubDir)
+                checkout scm
+
+                infra.getInfraSharedTools(sharedToolsSubDir)
 
                 try {
                   sh makeCliCmd + ' plan'
@@ -160,25 +164,4 @@ def agentTemplate(agentLabel, body) {
       }
     }
   }
-}
-
-
-// Retrieves the shared tooling
-def getInfraSharedTools(String sharedToolsSubDir) {
-  // Checkout the actual project on the same gitref as the Jenkinsfile
-  outputs = checkout scm
-
-  // Remove any leftover from developers (normal content or submodule) to avoid injection
-  sh 'rm -rf ' + sharedToolsSubDir
-
-  // Retrieve the "legit" shared tooling (should be the same as the submodule but we're never sure enough)
-  checkout changelog: false, poll: false,
-  scm: [$class: 'GitSCM', branches: [[name: '*/main']],
-    extensions: [
-      [$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true],
-      [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
-      [$class: 'GitSCMStatusChecksExtension', skip: true],
-    ], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
-
-  return outputs
 }

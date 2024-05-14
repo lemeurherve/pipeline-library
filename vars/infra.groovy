@@ -443,3 +443,19 @@ void publishDeprecationCheck(String deprecationSummary, String deprecationMessag
   echo "WARNING: ${deprecationMessage}"
   publishChecks name: 'pipeline-library', summary: deprecationSummary, conclusion: 'NEUTRAL', text: deprecationMessage
 }
+
+// Retrieves the shared tooling https://github.com/jenkins-infra/shared-tools/ as git submodule in a subfolder
+// * @param sharedToolsSubDir folder where the git submodule will be cloned (default: '.shared-tools')
+void getInfraSharedTools(String sharedToolsSubDir = '.shared-tools') {
+  // Remove any leftover from developers (normal content or submodule) to avoid injection
+  sh 'rm -rf ' + sharedToolsSubDir
+
+  // Retrieve the "legit" shared tooling (should be the same as the submodule but we're never sure enough)
+  checkout changelog: false, poll: false,
+  scm: [$class: 'GitSCM', branches: [[name: '*/main']],
+    extensions: [
+      [$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true],
+      [$class: 'RelativeTargetDirectory', relativeTargetDir: sharedToolsSubDir],
+      [$class: 'GitSCMStatusChecksExtension', skip: true],
+    ], userRemoteConfigs: [[credentialsId: 'github-app-infra', url: 'https://github.com/jenkins-infra/shared-tools.git']]]
+}

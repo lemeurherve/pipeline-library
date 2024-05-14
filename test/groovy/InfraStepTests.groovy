@@ -22,6 +22,9 @@ class InfraStepTests extends BaseTest {
   static final String defaultFileShareStorageAccount = 'astorageaccount'
   static final String defaultTokenDuration = '10'
   static final String defaultTokenPermissions = 'dlrw'
+  static final String defaultSharedToolsSubDir = '.shared-tools'
+  static final String customSharedToolsSubDir = '.my-shared-tools'
+  static final String sharedToolsRepo = 'https://github.com/jenkins-infra/shared-tools.git'
 
   @Override
   @Before
@@ -587,5 +590,39 @@ class InfraStepTests extends BaseTest {
     assertFalse(isOK)
     // then it doesn't succeeds
     assertJobStatusFailure()
+  }
+
+  @Test
+  void testGetInfraSharedTools() throws Exception {
+    def script = loadScript(scriptName)
+    // When calling infra.getInfraSharedTools without any parameter
+    script.getInfraSharedTools()
+    printCallStack()
+
+    // then the shared tools subfolder is deleted
+    assertTrue(assertMethodCallContainsPattern('sh', "rm -rf ${defaultSharedToolsSubDir}"))
+    // then a checkout of the shared tools repo is called
+    assertTrue(assertMethodCallContainsPattern('checkout', "url=${sharedToolsRepo}"))
+    // in the default shared tools subfolder
+    assertTrue(assertMethodCallContainsPattern('checkout', "relativeTargetDir=${defaultSharedToolsSubDir}"))
+    // then it succeeds
+    assertJobStatusSuccess()
+  }
+
+  @Test
+  void testGetInfraSharedToolsWithCustomSubDir() throws Exception {
+    def script = loadScript(scriptName)
+    // When calling infra.getInfraSharedTools without any parameter
+    script.getInfraSharedTools(customSharedToolsSubDir)
+    printCallStack()
+
+    // then the shared tools subfolder is deleted
+    assertTrue(assertMethodCallContainsPattern('sh', "rm -rf ${customSharedToolsSubDir}"))
+    // then a checkout of the shared tools repo is called
+    assertTrue(assertMethodCallContainsPattern('checkout', "url=${sharedToolsRepo}"))
+    // in the default shared tools subfolder
+    assertTrue(assertMethodCallContainsPattern('checkout', "relativeTargetDir=${customSharedToolsSubDir}"))
+    // then it succeeds
+    assertJobStatusSuccess()
   }
 }

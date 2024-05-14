@@ -29,6 +29,7 @@ class TerraformStepTests extends BaseTest {
     addEnvVar('BRANCH_NAME', 'main')
 
     binding.setProperty('scm', ['GIT_URL': 'https://github.com/lesfurets/jenkins-unit-test.git'])
+    binding.setVariable('infra', ['getInfraSharedTools': {m -> 'checkout'}])
     helper.registerAllowedMethod('ansiColor', [String.class, Closure.class], { s, body ->body() })
     helper.registerAllowedMethod('checkout', [Map.class], { m -> m })
 
@@ -69,9 +70,6 @@ class TerraformStepTests extends BaseTest {
     assertFalse(assertMethodCallContainsPattern('input', 'Should we apply these changes to production?'))
     assertFalse(assertMethodCallContainsPattern('stage', 'Shipping Changes'))
     assertFalse(assertMethodCallContainsPattern('sh', 'make --directory=.shared-tools/terraform/ deploy'))
-
-    // With the code checkouted (1 for production, 1 for staging by default)
-    assertTrue(assertMethodCallOccurrences('checkout',4))
 
     // With Terraform configured to run in automation trhough the environment
     assertTrue(assertMethodCallContainsPattern('withEnv','TF_IN_AUTOMATION=1'))
